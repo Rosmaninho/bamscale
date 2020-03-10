@@ -1,0 +1,68 @@
+# work from latest LTS ubuntu release
+FROM ubuntu:18.04
+
+# maintainer name
+MAINTAINER rosmaninho <pedro.rosmaninho@medicina.ulisboa.pt 
+
+RUN apt-get update && \
+    apt-get install -y \
+    apt-utils \
+    wget \
+    bzip2 \
+    gzip \
+    sudo \
+    gcc \
+    make \
+    libcurl4-openssl-dev \
+    libnss-sss \
+    curl \
+    less \
+    vim  \
+    unzip \
+    build-essential \
+    libpcre3 \
+    libpcre3-dev \
+    zlib1g-dev \
+    libncurses5-dev \
+    libncursesw5-dev \
+    libnss-sss \
+    libbz2-dev \
+    liblzma-dev \
+    libcurl4-openssl-dev \
+    git \
+    bwa \
+    libgnutls30 \
+    libgnutlsxx28
+
+# install htslib
+ENV htslib_version 1.9
+WORKDIR /usr/local/bin/
+RUN curl -SL https://github.com/samtools/htslib/releases/download/${htslib_version}/htslib-${htslib_version}.tar.bz2 \
+    > /usr/local/bin/htslib-${htslib_version}.tar.bz2
+RUN tar -xjf /usr/local/bin/htslib-${htslib_version}.tar.bz2 -C /usr/local/bin/
+RUN cd /usr/local/bin/htslib-${htslib_version}/ && ./configure
+RUN cd /usr/local/bin/htslib-${htslib_version}/ && make
+RUN cd /usr/local/bin/htslib-${htslib_version}/ && make install
+
+# install libBigWig
+ENV bigwig_version 0.4.4
+WORKDIR /usr/local/bin/
+RUN curl -SL https://github.com/dpryan79/libBigWig/archive/${bigwig_version}.tar.gz > /usr/local/bin/libbigwig-${bigwig_version}.tar.gz
+RUN tar -xzf /usr/local/bin/libbigwig-${bigwig_version}.tar.gz -C /usr/local/bin/
+RUN cd /usr/local/bin/libBigWig-${bigwig_version}/ && make
+RUN cd /usr/local/bin/libBigWig-${bigwig_version}/ && make install
+ENV LD_LIBRARY_PATH /usr/local/bin/htslib-${htslib_version}/:/usr/local/bin/libBigWig-${bigwig_version}/
+
+#install BAMscale
+ENV PATH="/usr/local/bin:${PATH}"
+RUN cd /usr/local && \
+    git clone https://github.com/ncbi/BAMscale.git && \
+    cd BAMscale/ && \
+	make && \
+	mv bin/BAMscale /usr/local/bin/ && \
+        cd .. && \
+        rm -rf BAMscale
+
+WORKDIR /usr/local/bin/
+
+ENTRYPOINT ["BAMscale"]
